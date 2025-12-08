@@ -141,7 +141,7 @@ jobs:
           aws-region: ${{ env.AWS_REGION }}
           role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
           role-duration-seconds: 3600
-          role-session-tagging: false
+          role-skip-session-tagging: true
 
       - name: Configure git for private repos
         run: |
@@ -208,7 +208,7 @@ jobs:
           aws-region: ${{ env.AWS_REGION }}
           role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
           role-duration-seconds: 3600
-          role-session-tagging: false
+          role-skip-session-tagging: true
 
       - name: Configure git for private repos
         run: |

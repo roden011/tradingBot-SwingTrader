@@ -31,7 +31,7 @@ on:
 
 env:
   PYTHON_VERSION: '3.11'
-  NODE_VERSION: '18'
+  NODE_VERSION: '20'
   AWS_REGION: us-east-2
 
 jobs:
@@ -173,7 +173,7 @@ jobs:
 
       - name: Deploy to dev-swing-trader-blue
         run: |
-          cdk deploy trading-bot-dev-swing-trader-blue --require-approval never
+          cdk deploy TradingBot-dev-swing-trader-blue --require-approval never
           echo "Deployed to dev-swing-trader-blue"
 
   # =============================================================================
@@ -237,7 +237,7 @@ jobs:
 
       - name: Deploy to ${{ github.event.inputs.environment }}-swing-trader-${{ github.event.inputs.stage }}
         run: |
-          STACK_NAME="trading-bot-${{ github.event.inputs.environment }}-swing-trader-${{ github.event.inputs.stage }}"
+          STACK_NAME="TradingBot-${{ github.event.inputs.environment }}-swing-trader-${{ github.event.inputs.stage }}"
           echo "Deploying to: $STACK_NAME"
           cdk deploy $STACK_NAME --require-approval never
           echo "Deployed to $STACK_NAME"

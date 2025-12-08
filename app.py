@@ -38,7 +38,7 @@ app = App()
 
 # Get deployment configuration from context
 config_env = app.node.try_get_context("environment") or os.environ.get("DEPLOY_ENV", "dev")
-config_profile = app.node.try_get_context("profile") or os.environ.get("DEPLOY_PROFILE", "aggressive")
+config_profile = app.node.try_get_context("profile") or os.environ.get("DEPLOY_PROFILE", "swing-trader")
 config_stage = app.node.try_get_context("stage") or os.environ.get("DEPLOY_STAGE", "blue")
 
 # Load configuration file

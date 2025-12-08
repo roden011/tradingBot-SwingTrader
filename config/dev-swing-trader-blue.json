@@ -1,0 +1,160 @@
+{
+  "environment": "dev",
+  "profile": "swing-trader",
+  "stage": "blue",
+  "account": "584197592414",
+  "region": "us-east-2",
+  "alpaca_secret_name": "trading-bot/alpaca-credentials-dev-swing-trader-blue",
+  "alert_email": "roden011+TradingBot-Dev@gmail.com",
+  "eventbridge_enabled": true,
+  "handler_version": "2.0",
+  "schedule": {
+    "trading_interval_minutes": 10,
+    "trading_start_hour_et": 9,
+    "trading_start_minute_et": 30,
+    "trading_end_hour_et": 16,
+    "trading_end_minute_et": 0,
+    "daily_report_hour_et": 16,
+    "daily_report_minute_et": 30
+  },
+  "market_scanner": {
+    "min_stock_price": "5.0",
+    "max_stock_price": "1000.0",
+    "min_daily_volume": "500000",
+    "max_universe_size": "400",
+    "batch_size": 100,
+    "pre_filter_enabled": true,
+    "pre_filter_min_movement_percent": 0.1,
+    "pre_filter_min_volume_ratio": 0.05,
+    "pre_filter_max_spread_percent": 1.0,
+    "pre_filter_min_atr": 0.25,
+    "cache_enabled": true
+  },
+  "lambda": {
+    "timeout_minutes": 12,
+    "memory_size": 2048,
+    "log_level": "INFO"
+  },
+  "execution": {
+    "enable_parallel_fetch": true,
+    "parallel_workers": 5,
+    "cache_intraday_data": true,
+    "conditional_strategies": true,
+    "tiered_analysis": false,
+    "pdt_growth_mode": true,
+    "pdt_aware_stops": true,
+    "slippage_tolerance_pct": 1.0,
+    "breakeven_on_overnight_profit": true,
+    "overnight_loss_trailing_percent": 0.1
+  },
+  "trading": {
+    "consensus_threshold": 0.14,
+    "historical_data_days": 300,
+    "use_margin": false,
+    "slippage_tolerance_percentage": 1.0
+  },
+  "pdt_tracking": {
+    "enabled": true,
+    "threshold": 25000.0,
+    "limit": 3
+  },
+  "intraday_exit_rules": {
+    "enabled": true,
+    "enable_take_profit": false,
+    "enable_intraday_stops": true,
+    "pdt_aware_mode": true,
+    "pdt_loss_exit_threshold": -3.0,
+    "take_profit_percentage": 999.0,
+    "take_profit_increment_percentage": 999.0,
+    "partial_exit_percentage": 0.0,
+    "max_take_profit_levels": 0,
+    "trailing_stop_percentage": 0.0,
+    "breakeven_threshold_percentage": 999.0,
+    "end_of_day_exit_enabled": false,
+    "end_of_day_exit_time": "15:45:00",
+    "eod_exit_hour": 15,
+    "eod_exit_minute": 45
+  },
+  "strategies": {
+    "weights": {
+      "relative_strength_intraday": 0.4,
+      "multi_day_momentum": 0.35,
+      "position_builder": 0.25
+    },
+    "relative_strength_intraday": {
+      "lookback_hours": 1,
+      "outperformance_threshold": 1.5,
+      "underperformance_threshold": 1.0,
+      "spy_trend_filter": true
+    },
+    "multi_day_momentum": {
+      "_comment": "Multi-day momentum strategy for 1-3 day holds"
+    },
+    "position_builder": {
+      "_comment": "Position builder strategy for trending stocks"
+    }
+  },
+  "risk_management": {
+    "layer1_trade_level": {
+      "max_risk_per_trade": 0.04,
+      "max_position_size": 0.25,
+      "atr_stop_multiplier": 2.5
+    },
+    "layer2_portfolio_level": {
+      "max_total_risk": 0.15,
+      "max_sector_concentration": 0.4
+    },
+    "layer3_time_based": {
+      "max_daily_loss": 0.1,
+      "max_weekly_loss": 0.25,
+      "max_drawdown": 0.2
+    },
+    "layer4_pattern_based": {
+      "max_consecutive_losses": 7,
+      "min_win_rate": 0.35
+    },
+    "layer5_market_conditions": {
+      "max_vix": 35,
+      "max_daily_volatility": 0.08
+    },
+    "layer6_safeguards": {
+      "circuit_breaker_enabled": true,
+      "kill_switch_enabled": true,
+      "trading_enabled": true
+    }
+  },
+  "position_management": {
+    "rebalancing_enabled": true,
+    "scoring_weights": {
+      "pl_weight": 0.2,
+      "momentum_weight": 0.5,
+      "volatility_weight": 0.15,
+      "time_weight": 0.05,
+      "consensus_weight": 0.1
+    },
+    "momentum_lookback_days": 5,
+    "volatility_lookback_days": 20
+  },
+  "tax_compliance": {
+    "wash_sale_tracking_enabled": true,
+    "wash_sale_period_days": 30
+  },
+  "tax_tracking": {
+    "_comment": "Tax obligation tracking for capital gains/losses",
+    "enabled": true,
+    "short_term_rate": 0.24,
+    "long_term_rate": 0.15,
+    "_note_short_term": "Short-term capital gains tax rate (positions held < 1 year), taxed as ordinary income. Default: 24% (marginal tax bracket)",
+    "_note_long_term": "Long-term capital gains tax rate (positions held >= 1 year). Default: 15% (most taxpayers), actual rate depends on income: 0%, 15%, or 20%",
+    "_note_quarterly": "Quarterly tax reports generated automatically on last day of each quarter (Mar 31, Jun 30, Sep 30, Dec 31)"
+  },
+  "tags": {
+    "Environment": "dev",
+    "Profile": "swing-trader",
+    "Stage": "blue",
+    "Project": "TradingBot",
+    "ManagedBy": "CDK",
+    "Strategy": "SwingTrading",
+    "Architecture": "ServiceOriented"
+  }
+}

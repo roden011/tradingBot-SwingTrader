@@ -1,0 +1,20 @@
+# Shared trading infrastructure
+git+https://github.com/roden011/tradingBot-Core.git@main#egg=tradingbot-core
+
+# Core dependencies
+pandas>=2.1.0
+numpy>=1.24.0
+alpaca-py>=0.20.0
+
+# AWS
+boto3>=1.28.0
+aws-cdk-lib>=2.100.0
+constructs>=10.0.0
+
+# Testing
+pytest>=7.4.0
+pytest-mock>=3.11.0
+moto>=4.2.0
+
+# Utilities
+python-dotenv>=1.0.0

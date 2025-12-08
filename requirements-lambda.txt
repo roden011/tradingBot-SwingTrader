@@ -1,0 +1,7 @@
+# Lambda layer dependencies
+# IMPORTANT: These versions are chosen for AWS Lambda GLIBC compatibility
+# Use manylinux2014 platform wheels (see CLAUDE.md for build instructions)
+numpy==2.2.6      # Latest with manylinux2014 support (GLIBC 2.17 compatible)
+pandas==2.3.2     # Compatible with numpy 2.2.6
+alpaca-py==0.43.2
+boto3==1.41.2

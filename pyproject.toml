@@ -1,0 +1,57 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "tradingbot-swingtrader"
+version = "0.1.0"
+description = "Swing trading bot - PDT-compliant overnight holding with dynamic stops"
+readme = "README.md"
+license = {text = "MIT"}
+requires-python = ">=3.10"
+authors = [
+    {name = "Will Roden"}
+]
+
+dependencies = [
+    # Shared core library
+    "tradingbot-core @ git+https://github.com/roden011/tradingBot-Core.git",
+    # Or for local development:
+    # "tradingbot-core @ file:../tradingBot-Core",
+
+    # AWS
+    "boto3>=1.28.0",
+    "aws-cdk-lib>=2.100.0",
+    "constructs>=10.0.0",
+
+    # Data processing
+    "pandas>=2.0.0",
+    "numpy>=1.24.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0.0",
+    "pytest-cov>=4.0.0",
+    "black>=23.0.0",
+    "mypy>=1.0.0",
+    "ruff>=0.1.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/roden011/tradingBot-SwingTrader"
+Repository = "https://github.com/roden011/tradingBot-SwingTrader.git"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-dir]
+"" = "src"
+
+[tool.black]
+line-length = 100
+target-version = ['py310', 'py311', 'py312']
+
+[tool.ruff]
+line-length = 100
+select = ["E", "F", "W", "I", "N", "UP", "B", "C4"]

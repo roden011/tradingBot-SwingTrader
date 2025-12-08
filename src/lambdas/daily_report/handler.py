@@ -65,12 +65,12 @@ def lambda_handler(event, context):
             positions=[
                 PositionData(
                     symbol=p.symbol,
-                    qty=float(p.qty),
+                    qty=float(p.quantity),
                     avg_entry_price=float(p.avg_entry_price),
                     current_price=float(p.current_price),
                     market_value=float(p.market_value),
                     unrealized_pl=float(p.unrealized_pl),
-                    unrealized_pl_pct=float(p.unrealized_plpc) * 100
+                    unrealized_pl_pct=float(p.unrealized_pl_pct) * 100
                 )
                 for p in positions
             ],

@@ -35,6 +35,7 @@ secrets_manager = boto3.client('secretsmanager')
 
 TRADES_TABLE = os.environ['TRADES_TABLE']
 RISK_METRICS_TABLE = os.environ['RISK_METRICS_TABLE']
+TAX_OBLIGATIONS_TABLE = os.environ.get('TAX_OBLIGATIONS_TABLE', '')
 ALERT_TOPIC_ARN = os.environ['ALERT_TOPIC_ARN']
 ALPACA_SECRET_NAME = os.environ['ALPACA_SECRET_NAME']
 
@@ -53,6 +54,13 @@ def lambda_handler(event, context):
         trades = get_today_trades()
         equity_history = get_historical_equity_values(days_back=30)
         market_indices = fetch_market_indices(broker, days_back=7)
+
+        # Get tax data if available
+        tax_data = None
+        qtd_tax_data = None
+        if TAX_OBLIGATIONS_TABLE:
+            tax_data = get_today_tax_summary()
+            qtd_tax_data = get_qtd_tax_summary()
 
         # Convert to ReportData format
         report_data = ReportData(
@@ -77,6 +85,8 @@ def lambda_handler(event, context):
             trades=trades,
             equity_history=equity_history,
             market_indices=market_indices,
+            tax_data=tax_data,
+            qtd_tax_data=qtd_tax_data,
             bot_name="Swing Trader Bot"
         )
 
@@ -168,6 +178,135 @@ def get_historical_equity_values(days_back=30):
     except Exception as e:
         logger.error(f"Error fetching historical equity: {e}")
         return []
+
+
+def get_today_tax_summary():
+    """Get today's tax summary from tax obligations table."""
+    if not TAX_OBLIGATIONS_TABLE:
+        return None
+
+    try:
+        table = dynamodb.Table(TAX_OBLIGATIONS_TABLE)
+        today = datetime.utcnow().date().isoformat()
+
+        response = table.scan(
+            FilterExpression='begins_with(sell_date, :today)',
+            ExpressionAttributeValues={':today': today}
+        )
+
+        items = response.get('Items', [])
+
+        if not items:
+            return TaxData(
+                num_trades=0,
+                total_gains=0.0,
+                total_losses=0.0,
+                net_gains=0.0,
+                tax_owed=0.0,
+                period_label=f"Today ({today})"
+            )
+
+        # Calculate today's summary
+        total_gains = sum(
+            float(t.get('realized_gain_loss', 0))
+            for t in items if float(t.get('realized_gain_loss', 0)) > 0
+        )
+        total_losses = sum(
+            abs(float(t.get('realized_gain_loss', 0)))
+            for t in items if float(t.get('realized_gain_loss', 0)) < 0
+        )
+        net_gains = total_gains - total_losses
+        tax_owed = sum(float(t.get('tax_owed', 0)) for t in items)
+
+        return TaxData(
+            num_trades=len(items),
+            total_gains=total_gains,
+            total_losses=total_losses,
+            net_gains=net_gains,
+            tax_owed=tax_owed,
+            period_label=f"Today ({today})"
+        )
+
+    except Exception as e:
+        logger.error(f"Error getting today's tax summary: {e}")
+        return None
+
+
+def get_qtd_tax_summary():
+    """Get quarter-to-date tax summary from tax obligations table."""
+    if not TAX_OBLIGATIONS_TABLE:
+        return None
+
+    try:
+        table = dynamodb.Table(TAX_OBLIGATIONS_TABLE)
+        now = datetime.utcnow()
+
+        # Calculate quarter start date
+        current_quarter = (now.month - 1) // 3 + 1
+        quarter_start_month = (current_quarter - 1) * 3 + 1
+        quarter_start = datetime(now.year, quarter_start_month, 1).isoformat()
+
+        response = table.scan(
+            FilterExpression='sell_date >= :start',
+            ExpressionAttributeValues={':start': quarter_start}
+        )
+
+        items = response.get('Items', [])
+
+        # Handle pagination
+        while 'LastEvaluatedKey' in response:
+            response = table.scan(
+                FilterExpression='sell_date >= :start',
+                ExpressionAttributeValues={':start': quarter_start},
+                ExclusiveStartKey=response['LastEvaluatedKey']
+            )
+            items.extend(response.get('Items', []))
+
+        if not items:
+            return TaxData(
+                num_trades=0,
+                total_gains=0.0,
+                total_losses=0.0,
+                net_gains=0.0,
+                tax_owed=0.0,
+                short_term_gains=0.0,
+                long_term_gains=0.0,
+                period_label=f"Quarter {current_quarter} {now.year} (QTD)"
+            )
+
+        # Calculate QTD summary
+        short_term = sum(
+            float(t.get('realized_gain_loss', 0))
+            for t in items
+            if float(t.get('realized_gain_loss', 0)) > 0 and not t.get('is_long_term', False)
+        )
+        long_term = sum(
+            float(t.get('realized_gain_loss', 0))
+            for t in items
+            if float(t.get('realized_gain_loss', 0)) > 0 and t.get('is_long_term', False)
+        )
+        total_gains = short_term + long_term
+        total_losses = sum(
+            abs(float(t.get('realized_gain_loss', 0)))
+            for t in items if float(t.get('realized_gain_loss', 0)) < 0
+        )
+        net_gains = total_gains - total_losses
+        tax_owed = sum(float(t.get('tax_owed', 0)) for t in items)
+
+        return TaxData(
+            num_trades=len(items),
+            total_gains=total_gains,
+            total_losses=total_losses,
+            net_gains=net_gains,
+            tax_owed=tax_owed,
+            short_term_gains=short_term,
+            long_term_gains=long_term,
+            period_label=f"Quarter {current_quarter} {now.year} (QTD)"
+        )
+
+    except Exception as e:
+        logger.error(f"Error getting QTD tax summary: {e}")
+        return None
 
 
 def send_report(report: str):

@@ -210,6 +210,38 @@ class AlpacaClient:
         logger.info(f"Retrieved historical data for {len(result)} symbols (parallel fetch)")
         return result
 
+    def get_bars(
+        self,
+        symbols: List[str],
+        start: datetime,
+        end: datetime,
+        timeframe=None,
+        enable_parallel: bool = True
+    ) -> Dict[str, pd.DataFrame]:
+        """
+        Adapter method to match Core's BrokerClient interface.
+
+        Wraps get_historical_bars to provide the interface expected by
+        tradingbot_core's MarketDataService.
+
+        Args:
+            symbols: List of symbols
+            start: Start datetime
+            end: End datetime
+            timeframe: Core's Timeframe enum (ignored, always uses daily bars)
+            enable_parallel: Enable parallel fetching
+
+        Returns:
+            Dict mapping symbol to DataFrame with OHLCV data
+        """
+        return self.get_historical_bars(
+            symbols=symbols,
+            start=start,
+            end=end,
+            timeframe=TimeFrame.Day,
+            enable_parallel=enable_parallel
+        )
+
     def get_latest_prices(self, symbols: List[str]) -> Dict[str, float]:
         """
         Get latest prices for symbols

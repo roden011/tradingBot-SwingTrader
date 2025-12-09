@@ -43,11 +43,25 @@ src/
 
 Uses `tradingbot-core` for shared functionality:
 ```python
+# Models
 from tradingbot_core import Trade
-from tradingbot_core.services import BalanceService, SystemStateService, MarketDataService, TaxService
-from tradingbot_core.utils import TechnicalIndicators
 from tradingbot_core.models.utils import convert_floats_to_decimal
+
+# Services
+from tradingbot_core.services import BalanceService, SystemStateService, MarketDataService, TaxService
+
+# Compliance (PDT and Wash Sale tracking)
+from tradingbot_core import PDTTracker, WashSaleTracker, DayTradeRepository
+
+# Utils
+from tradingbot_core.utils import TechnicalIndicators
+from tradingbot_core import setup_logger, PositionReconciler
+from tradingbot_core import load_config_from_s3, ConfigLoader
+from tradingbot_core import safe_float, safe_int, safe_divide, validate_positive
 ```
+
+Note: Local `utils/` files (pdt_tracker.py, wash_sale_tracker.py, type_conversion.py, etc.) are deprecated.
+All shared utilities now import from `tradingbot_core`.
 
 ## Key Features
 
@@ -148,8 +162,7 @@ cdk deploy TradingBotStack-dev-swing-trader-green
 
 ### CRITICAL
 1. **Missing Lambda handlers** - `kill_switch` and `test_numpy_lambda` handlers don't exist but CDK references them
-2. **Bare `except:` in wash_sale_tracker.py** - Should use specific exceptions
-3. **Silent exception swallowing** in execution_orchestrator.py:2009 - needs logging
+2. **Silent exception swallowing** in execution_orchestrator.py:2009 - needs logging
 
 ### HIGH
 1. **DST not handled** in EventBridge schedule (always uses EST offset)
@@ -262,10 +275,13 @@ position_age_days = (today - entry_date).days
 
 When asked about specific functionality:
 - "execution flow" → `services/execution_orchestrator.py`
-- "PDT tracking" → `services/pdt_service.py`, `utils/pdt_tracker.py`
+- "PDT tracking" → `services/pdt_service.py` (uses `tradingbot_core.PDTTracker`)
 - "order execution" → `services/order_service.py`
 - "rebalancing" → `services/execution_orchestrator.py` (search `_execute_rebalancing`)
 - "EOD exits" → `services/execution_orchestrator.py` (search `_check_end_of_day_exit`)
 - "strategies" → `strategies/` directory
 - "CDK/infrastructure" → `infrastructure/trading_bot_stack.py`
 - "config" → `config/dev-swing-trader-*.json`
+
+Note: PDT tracker, wash sale tracker, position reconciliation, and type conversion
+utilities now live in `tradingbot_core`. Local copies in `utils/` are deprecated.

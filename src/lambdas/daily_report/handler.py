@@ -291,7 +291,13 @@ def get_qtd_tax_summary():
             for t in items if float(t.get('realized_gain_loss', 0)) < 0
         )
         net_gains = total_gains - total_losses
-        tax_owed = sum(float(t.get('tax_owed', 0)) for t in items)
+
+        # Tax is only owed on net gains (losses offset gains)
+        if net_gains > 0:
+            # Estimate ~35% for short-term gains (ordinary income rate)
+            tax_owed = net_gains * 0.35
+        else:
+            tax_owed = 0.0
 
         return TaxData(
             num_trades=len(items),

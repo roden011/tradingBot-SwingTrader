@@ -115,7 +115,7 @@ class OrderService:
             trade.mark_filled(
                 filled_price=order_result.filled_avg_price,
                 filled_quantity=order_result.filled_quantity,
-                alpaca_order_id=order_result.order_id,
+                broker_order_id=order_result.order_id,
                 slippage_dollars=order_result.slippage_dollars,
                 slippage_percentage=order_result.slippage_percentage
             )
@@ -196,7 +196,7 @@ class OrderService:
             trade.mark_filled(
                 filled_price=order_result.filled_avg_price,
                 filled_quantity=order_result.filled_quantity,
-                alpaca_order_id=order_result.order_id,
+                broker_order_id=order_result.order_id,
                 slippage_dollars=order_result.slippage_dollars,
                 slippage_percentage=order_result.slippage_percentage
             )

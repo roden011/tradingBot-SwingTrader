@@ -1,15 +1,19 @@
-"""
-SwingTrader-Specific Strategies
+from .base_strategy import BaseStrategy, Signal
+# Old swing trading strategies (commented for rollback):
+# from .mean_reversion import MeanReversionStrategy
+# from .ma_crossover import MovingAverageCrossoverStrategy
+# from .pairs_trading import PairsTradingStrategy
+# from .volatility_arbitrage import VolatilityArbitrageStrategy
+from .momentum_breakout import MomentumBreakoutStrategy
+from .opening_range_breakout import OpeningRangeBreakoutStrategy
+from .relative_strength_intraday import RelativeStrengthIntradayStrategy
+from .strategy_manager import StrategyManager
 
-These strategies are optimized for swing trading with
-overnight holding and PDT compliance.
-
-Shared strategies (MomentumBreakout, MACrossover, etc.) are
-imported from tradingbot_core.strategies.
-"""
-
-# Swing trader specific strategies will be migrated here:
-# from .multi_day_momentum import MultiDayMomentum
-# from .position_builder import PositionBuilder
-
-__all__ = []
+__all__ = [
+    "BaseStrategy",
+    "Signal",
+    "MomentumBreakoutStrategy",
+    "OpeningRangeBreakoutStrategy",
+    "RelativeStrengthIntradayStrategy",
+    "StrategyManager",
+]

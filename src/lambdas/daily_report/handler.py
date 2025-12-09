@@ -8,7 +8,11 @@ import json
 import logging
 import boto3
 from datetime import datetime, timedelta
+from zoneinfo import ZoneInfo
 import sys
+
+# Eastern Time zone for US markets
+ET = ZoneInfo('America/New_York')
 
 # Add Lambda layer path
 sys.path.insert(0, '/opt/python')
@@ -68,7 +72,7 @@ def lambda_handler(event, context):
                 equity=float(account.equity),
                 cash=float(account.cash),
                 buying_power=float(account.buying_power),
-                last_equity=float(account.last_equity) if hasattr(account, 'last_equity') else None
+                last_equity=float(account.last_equity) if hasattr(account, 'last_equity') and account.last_equity else None
             ),
             positions=[
                 PositionData(
@@ -119,15 +123,16 @@ def get_broker_client():
 
 
 def get_today_trades():
-    """Get today's trades from DynamoDB."""
+    """Get today's trades from DynamoDB (uses ET for trading day)."""
     table = dynamodb.Table(TRADES_TABLE)
-    today = datetime.utcnow().date().isoformat()
+    # Use ET date for trading day alignment
+    today_et = datetime.now(ET).date().isoformat()
 
     try:
         response = table.scan(
             FilterExpression='begins_with(#ts, :today)',
             ExpressionAttributeNames={'#ts': 'timestamp'},
-            ExpressionAttributeValues={':today': today}
+            ExpressionAttributeValues={':today': today_et}
         )
         return response.get('Items', [])
     except Exception as e:
@@ -181,17 +186,18 @@ def get_historical_equity_values(days_back=30):
 
 
 def get_today_tax_summary():
-    """Get today's tax summary from tax obligations table."""
+    """Get today's tax summary from tax obligations table (uses ET for trading day)."""
     if not TAX_OBLIGATIONS_TABLE:
         return None
 
     try:
         table = dynamodb.Table(TAX_OBLIGATIONS_TABLE)
-        today = datetime.utcnow().date().isoformat()
+        # Use ET date for trading day alignment
+        today_et = datetime.now(ET).date().isoformat()
 
         response = table.scan(
             FilterExpression='begins_with(sell_date, :today)',
-            ExpressionAttributeValues={':today': today}
+            ExpressionAttributeValues={':today': today_et}
         )
 
         items = response.get('Items', [])
@@ -203,7 +209,7 @@ def get_today_tax_summary():
                 total_losses=0.0,
                 net_gains=0.0,
                 tax_owed=0.0,
-                period_label=f"Today ({today})"
+                period_label=f"Today ({today_et})"
             )
 
         # Calculate today's summary
@@ -224,7 +230,7 @@ def get_today_tax_summary():
             total_losses=total_losses,
             net_gains=net_gains,
             tax_owed=tax_owed,
-            period_label=f"Today ({today})"
+            period_label=f"Today ({today_et})"
         )
 
     except Exception as e:

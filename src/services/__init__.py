@@ -1,16 +1,46 @@
 """
-SwingTrader-Specific Services
+Services module for trading bot refactored architecture.
 
-These services are specific to swing trading and handle:
-- PDT-aware exit logic
-- Dynamic stop adjustment by position age
-- Rebalancing-based exits
+This module contains service classes that handle specific domains of the trading system:
 
-Shared services (BalanceService, MarketDataService, etc.)
-are imported from tradingbot_core.services.
+Shared Services (from tradingbot_core):
+- BalanceService: Cash/margin tracking and deleveraging
+- MarketDataService: Data fetching, caching, parallel operations
+- SystemStateService: Kill switch, circuit breaker, state checks
+- TaxService: Tax tracking and obligations
+
+Bot-Specific Services (local):
+- PDTService: PDT tracking and EOD exit logic
+- OrderService: Order creation and submission
+- ExecutionOrchestrator: Main orchestration logic
+
+Note: StrategyManager and PositionEvaluator are existing classes used directly.
 """
 
-# Swing trader specific services will be migrated here:
-# from .pdt_exit_service import PDTExitService (or override of PDTService)
+# Shared services from tradingbot_core
+from tradingbot_core.services import (
+    BalanceService,
+    BalanceTracker,
+    MarketDataService,
+    SystemStateService,
+    TaxService,
+    TaxObligation,
+)
 
-__all__ = []
+# Bot-specific services (local)
+from services.pdt_service import PDTService
+from services.order_service import OrderService
+from services.execution_orchestrator import ExecutionOrchestrator, ExecutionContext
+
+__all__ = [
+    'PDTService',
+    'BalanceService',
+    'BalanceTracker',
+    'MarketDataService',
+    'OrderService',
+    'SystemStateService',
+    'TaxService',
+    'TaxObligation',
+    'ExecutionOrchestrator',
+    'ExecutionContext',
+]

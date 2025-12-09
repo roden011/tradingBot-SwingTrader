@@ -464,24 +464,6 @@ class TradingBotStack(Stack):
             environment=common_env,
         )
 
-        # Test NumPy Lambda (temporary for debugging)
-        self.test_numpy = lambda_.Function(
-            self,
-            "TestNumPy",
-            function_name=f"{self.stack_prefix}-test-numpy",
-            runtime=lambda_.Runtime.PYTHON_3_11,
-            handler="test_numpy_lambda.lambda_handler",
-            code=lambda_.Code.from_asset(
-                "src",
-                exclude=["**/__pycache__", "**/*.pyc", "**/.DS_Store", "**/.pytest_cache"]
-            ),
-            role=lambda_role,
-            timeout=Duration.seconds(30),
-            memory_size=256,
-            layers=[self.dependencies_layer],
-            environment=common_env,
-        )
-
         # ========== EventBridge Rules ==========
         # Conditionally enable EventBridge based on configuration
         # Dev: Both stages active (eventbridge_enabled=true for both)
@@ -497,11 +479,26 @@ class TradingBotStack(Stack):
         daily_report_hour_et = schedule_config.get("daily_report_hour_et", 16)
         daily_report_minute_et = schedule_config.get("daily_report_minute_et", 30)
 
-        # Convert ET to UTC (ET = UTC-5, standard time offset)
-        # Note: EventBridge uses UTC. For simplicity, we use standard time offset (EST = UTC-5)
-        # TODO: Consider daylight saving time if needed (EDT = UTC-4)
-        trading_start_hour_utc = trading_start_hour_et + 5
-        trading_end_hour_utc = trading_end_hour_et + 5
+        # Convert ET to UTC
+        # Eastern Time alternates between EST (UTC-5) and EDT (UTC-4)
+        # To handle both DST and standard time, we schedule to cover both offsets
+        # The Lambda's market hours check will prevent execution when market is closed
+        #
+        # EST (Nov-Mar): ET + 5 = UTC
+        # EDT (Mar-Nov): ET + 4 = UTC
+        #
+        # Strategy: Use the earlier offset (EDT, +4) for start time and later offset (EST, +5) for end time
+        # This ensures we always cover market hours regardless of DST status
+        trading_start_hour_utc_edt = trading_start_hour_et + 4  # Earlier (for EDT)
+        trading_start_hour_utc_est = trading_start_hour_et + 5  # Later (for EST)
+        trading_end_hour_utc_edt = trading_end_hour_et + 4      # Earlier (for EDT)
+        trading_end_hour_utc_est = trading_end_hour_et + 5      # Later (for EST)
+
+        # Use the full range to cover both DST scenarios
+        trading_start_hour_utc = trading_start_hour_utc_edt  # Start at EDT time (earlier)
+        trading_end_hour_utc = trading_end_hour_utc_est      # End at EST time (later)
+
+        # For daily report, use the later time (EST) to ensure it runs after market close
         daily_report_hour_utc = daily_report_hour_et + 5
 
         # Build minute list for trading execution based on interval

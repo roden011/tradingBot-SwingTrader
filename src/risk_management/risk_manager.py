@@ -272,7 +272,11 @@ class RiskManager:
                     market_data['low'],
                     market_data['close']
                 )
+                if atr.empty or len(atr) == 0:
+                    raise ValueError("ATR series is empty")
                 current_atr = atr.iloc[-1]
+                if pd.isna(current_atr):
+                    raise ValueError("ATR value is NaN")
                 stop_distance = current_atr * self.atr_stop_multiplier
                 risk_amount = quantity * stop_distance
                 risk_pct = risk_amount / portfolio_value
@@ -380,7 +384,11 @@ class RiskManager:
             try:
                 from tradingbot_core.utils import TechnicalIndicators
                 hv = TechnicalIndicators.historical_volatility(market_data['close'], 20)
+                if hv.empty or len(hv) == 0:
+                    raise ValueError("Historical volatility series is empty")
                 current_vol = hv.iloc[-1]
+                if pd.isna(current_vol):
+                    raise ValueError("Historical volatility value is NaN")
 
                 # Convert to daily volatility
                 daily_vol = current_vol / (252 ** 0.5)

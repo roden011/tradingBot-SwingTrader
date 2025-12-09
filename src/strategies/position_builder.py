@@ -78,17 +78,26 @@ class PositionBuilderStrategy(BaseStrategy):
         # Volume
         avg_volume = TechnicalIndicators.volume_sma(volume, period=20)
 
-        # Get latest values
+        # Get latest values with NaN safety
         current_price = close.iloc[-1]
         current_ma20 = ma_20.iloc[-1]
         current_ma50 = ma_50.iloc[-1]
         current_10d_low = ten_day_low.iloc[-1]
         current_10d_high = ten_day_high.iloc[-1]
         current_macd_hist = macd_hist.iloc[-1]
-        prev_macd_hist = macd_hist.iloc[-2]
+        prev_macd_hist = macd_hist.iloc[-2] if len(macd_hist) >= 2 else 0
         current_atr = atr.iloc[-1]
         current_volume = volume.iloc[-1]
         current_avg_volume = avg_volume.iloc[-1]
+
+        # Check for NaN values in critical indicators
+        if pd.isna(current_ma20) or pd.isna(current_ma50) or pd.isna(current_atr):
+            return Signal(
+                action="hold",
+                confidence=0.0,
+                reason="Indicator calculation returned NaN",
+                metadata={}
+            )
 
         # Check trend status
         in_uptrend = (current_price > current_ma20 and current_ma20 > current_ma50)

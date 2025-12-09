@@ -11,7 +11,9 @@ from decimal import Decimal
 import json
 import os
 import logging
+import uuid
 import boto3
+import pandas as pd
 from alpaca.data.timeframe import TimeFrame
 
 from alpaca_client.client import AlpacaClient
@@ -27,7 +29,7 @@ from tradingbot_core.models.utils import convert_floats_to_decimal
 from utils.logger import setup_logger
 from utils.type_conversion import safe_float, safe_int
 
-# Shared services from tradingbot_core
+# Shared services and models from tradingbot_core
 from tradingbot_core.services import (
     BalanceService,
     BalanceTracker,
@@ -35,6 +37,8 @@ from tradingbot_core.services import (
     SystemStateService,
     TaxService,
 )
+from tradingbot_core import Trade
+from tradingbot_core.utils import TechnicalIndicators
 
 # Bot-specific services (local)
 from services.pdt_service import PDTService
@@ -1158,7 +1162,6 @@ class ExecutionOrchestrator:
                 proceeds = filled_price * filled_qty
 
                 # Create trade record
-                from tradingbot_core import Trade
                 import uuid
 
                 trade = Trade(
@@ -1251,7 +1254,6 @@ class ExecutionOrchestrator:
                 proceeds = filled_price * filled_qty
 
                 # Create trade record
-                from tradingbot_core import Trade
                 import uuid
 
                 trade = Trade(
@@ -1859,9 +1861,12 @@ class ExecutionOrchestrator:
                     logger.warning(f"Error checking wash sale for {symbol}: {e}. Proceeding with trade.")
 
             # 2. POSITION SIZING
-            from tradingbot_core.utils import TechnicalIndicators
-            atr = TechnicalIndicators.atr(data['high'], data['low'], data['close']).iloc[-1]
-            if atr <= 0:
+            atr_series = TechnicalIndicators.atr(data['high'], data['low'], data['close'])
+            if atr_series.empty or len(atr_series) == 0:
+                result['reason'] = 'Insufficient data for ATR'
+                return result
+            atr = atr_series.iloc[-1]
+            if pd.isna(atr) or atr <= 0:
                 result['reason'] = 'Invalid ATR'
                 return result
 
@@ -1877,9 +1882,6 @@ class ExecutionOrchestrator:
                 return result
 
             # 3. CREATE TRADE OBJECT
-            from tradingbot_core import Trade
-            import uuid
-
             trade = Trade(
                 trade_id=str(uuid.uuid4()),
                 symbol=symbol,
@@ -2006,8 +2008,8 @@ class ExecutionOrchestrator:
                                     ).date()
                                     if entry_date == today:
                                         continue  # Skip same-day positions
-                                except Exception:
-                                    pass
+                                except (ValueError, TypeError, AttributeError) as e:
+                                    logger.debug(f"Could not parse entry_timestamp '{entry_timestamp_str}' for {pos_symbol}: {e}")
 
                             pos_value = position.get('market_value', position.get('quantity', 0) * position.get('current_price', 0))
                             position_pct = pos_value / portfolio_value if portfolio_value > 0 else 0
@@ -2244,6 +2246,27 @@ class ExecutionOrchestrator:
                 result['reason'] = 'Invalid position data'
                 return result
 
+            # Safety check: Verify position still exists in Alpaca before selling
+            # This prevents race conditions where another Lambda already sold this position
+            try:
+                alpaca_position = alpaca_client.get_position(symbol)
+                if alpaca_position is None:
+                    logger.warning(f"Position {symbol} no longer exists in Alpaca - skipping sell")
+                    result['reason'] = 'Position no longer exists'
+                    return result
+                # Use actual quantity from Alpaca in case it changed
+                actual_qty = safe_float(alpaca_position.qty)
+                if actual_qty != quantity:
+                    logger.warning(f"Position {symbol} quantity changed: expected {quantity}, actual {actual_qty}")
+                    quantity = actual_qty
+                    if quantity <= 0:
+                        result['reason'] = 'No quantity to sell'
+                        return result
+            except Exception as e:
+                # If we can't verify, log warning but proceed with sell attempt
+                # Alpaca will reject if position doesn't exist
+                logger.warning(f"Could not verify position {symbol} before sell: {e}")
+
             # Get market data for this symbol
             data = historical_data.get(symbol)
             if data is None or data.empty:
@@ -2251,9 +2274,6 @@ class ExecutionOrchestrator:
                 return result
 
             # Create trade object
-            from tradingbot_core import Trade
-            import uuid
-
             trade = Trade(
                 trade_id=str(uuid.uuid4()),
                 symbol=symbol,
@@ -2355,9 +2375,6 @@ class ExecutionOrchestrator:
     ) -> None:
         """Save rejected trade to DynamoDB for analysis"""
         try:
-            from tradingbot_core import Trade
-            import uuid
-
             trade = Trade(
                 trade_id=str(uuid.uuid4()),
                 symbol=symbol,

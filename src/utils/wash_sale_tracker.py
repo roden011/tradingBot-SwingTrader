@@ -108,15 +108,18 @@ class WashSaleTracker:
                 continue
 
             try:
-                trade_date = datetime.fromisoformat(timestamp)
-            except:
+                trade_date = datetime.fromisoformat(timestamp.replace('Z', '+00:00'))
+            except (ValueError, TypeError, AttributeError) as e:
+                logger.debug(f"Could not parse timestamp '{timestamp}': {e}")
                 continue
 
-            if trade_date < cutoff_date:
+            if trade_date.replace(tzinfo=None) < cutoff_date:
                 continue  # Too old
 
             # This is a recent loss trade
-            days_ago = (datetime.utcnow() - trade_date).days
+            # Make sure we compare naive datetimes
+            trade_date_naive = trade_date.replace(tzinfo=None) if trade_date.tzinfo else trade_date
+            days_ago = (datetime.utcnow() - trade_date_naive).days
             days_remaining = self.wash_sale_period_days - days_ago
 
             loss_trades.append({
@@ -184,11 +187,12 @@ class WashSaleTracker:
                 continue
 
             try:
-                trade_date = datetime.fromisoformat(timestamp)
-            except:
+                trade_date = datetime.fromisoformat(timestamp.replace('Z', '+00:00'))
+            except (ValueError, TypeError, AttributeError) as e:
+                logger.debug(f"Could not parse timestamp '{timestamp}': {e}")
                 continue
 
-            if trade_date < cutoff_date:
+            if trade_date.replace(tzinfo=None) < cutoff_date:
                 continue
 
             symbol = trade.get('symbol')

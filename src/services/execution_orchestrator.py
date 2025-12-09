@@ -20,14 +20,11 @@ from alpaca_client.client import AlpacaClient
 from market_scanner.scanner import MarketScanner
 from strategies.strategy_manager import StrategyManager
 from risk_management.risk_manager import RiskManager
-from utils.position_reconciliation import PositionReconciler
+from tradingbot_core import PositionReconciler, PDTTracker, WashSaleTracker
+from tradingbot_core import setup_logger, safe_float, safe_int
 from position_management.position_evaluator import PositionEvaluator
-from utils.pdt_tracker import PDTTracker
-from utils.wash_sale_tracker import WashSaleTracker
 from models.risk_metrics import RiskMetrics
 from tradingbot_core.models.utils import convert_floats_to_decimal
-from utils.logger import setup_logger
-from utils.type_conversion import safe_float, safe_int
 
 # Shared services and models from tradingbot_core
 from tradingbot_core.services import (
@@ -43,7 +40,7 @@ from tradingbot_core.utils import TechnicalIndicators
 # Bot-specific services (local)
 from services.pdt_service import PDTService
 from services.order_service import OrderService
-from utils.config_loader import load_config_from_s3
+from tradingbot_core import load_config_from_s3
 
 logger = setup_logger(__name__)
 

@@ -29,7 +29,7 @@ import os
 # sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
 from services.execution_orchestrator import ExecutionOrchestrator
-from utils.logger import setup_logger
+from tradingbot_core import setup_logger
 
 logger = setup_logger(__name__)
 

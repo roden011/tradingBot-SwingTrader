@@ -14,7 +14,7 @@ from alpaca_client.client import AlpacaClient
 from tradingbot_core import OrderResult, OrderStatus
 from tradingbot_core import Trade
 from tradingbot_core.models.utils import convert_floats_to_decimal
-from utils.logger import setup_logger
+from tradingbot_core import setup_logger
 
 logger = setup_logger(__name__)
 
